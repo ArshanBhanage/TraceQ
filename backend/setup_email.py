@@ -15,16 +15,33 @@ SCOPES = ['https://www.googleapis.com/auth/gmail.send']
 def setup_email_credentials():
     """Setup Gmail API credentials"""
     
-    # Your Google OAuth credentials - Replace with your actual credentials
-    # Get these from: https://console.cloud.google.com/
+    # Load environment variables
+    from dotenv import load_dotenv
+    load_dotenv()
+    
+    # Get Google OAuth credentials from environment variables
+    client_id = os.environ.get("GOOGLE_CLIENT_ID")
+    client_secret = os.environ.get("GOOGLE_CLIENT_SECRET") 
+    project_id = os.environ.get("GOOGLE_PROJECT_ID", "your_project_id_here")
+    
+    if not client_id or client_id == "your_google_client_id_here":
+        print("❌ GOOGLE_CLIENT_ID not set in environment variables")
+        print("   Please set GOOGLE_CLIENT_ID in your .env file")
+        return False
+        
+    if not client_secret or client_secret == "your_google_client_secret_here":
+        print("❌ GOOGLE_CLIENT_SECRET not set in environment variables") 
+        print("   Please set GOOGLE_CLIENT_SECRET in your .env file")
+        return False
+    
     credentials_info = {
         "web": {
-            "client_id": "YOUR_GOOGLE_CLIENT_ID_HERE",
-            "project_id": "YOUR_PROJECT_ID_HERE",
+            "client_id": client_id,
+            "project_id": project_id,
             "auth_uri": "https://accounts.google.com/o/oauth2/auth",
             "token_uri": "https://oauth2.googleapis.com/token",
             "auth_provider_x509_cert_url": "https://www.googleapis.com/oauth2/v1/certs",
-            "client_secret": "YOUR_GOOGLE_CLIENT_SECRET_HERE",
+            "client_secret": client_secret,
             "redirect_uris": [
                 "http://localhost:8000/",
                 "http://localhost:8080",
@@ -51,7 +68,7 @@ def setup_email_credentials():
         json.dump(credentials_info, f, indent=2)
     
     print("✅ Credentials file created: credentials.json")
-    print("⚠️  Please replace YOUR_GOOGLE_CLIENT_ID_HERE and YOUR_GOOGLE_CLIENT_SECRET_HERE with actual values")
+    print("✅ Using credentials from environment variables")
     
     # Authenticate and get token
     creds = None
@@ -78,6 +95,7 @@ def setup_email_credentials():
     
     print("✅ Gmail API authentication successful")
     print("✅ Token saved to: token.json")
+    return True
 
 if __name__ == "__main__":
     print("🔧 Setting up Gmail API credentials for TraceQ...")
@@ -86,7 +104,19 @@ if __name__ == "__main__":
     print("1. Created a project in Google Cloud Console")
     print("2. Enabled the Gmail API")
     print("3. Created OAuth 2.0 credentials")
-    print("4. Updated the client_id and client_secret in this script")
+    print("4. Set GOOGLE_CLIENT_ID and GOOGLE_CLIENT_SECRET in your .env file")
+    print()
+    print("Required environment variables:")
+    print("- GOOGLE_CLIENT_ID=your_actual_client_id")
+    print("- GOOGLE_CLIENT_SECRET=your_actual_client_secret")
+    print("- GOOGLE_PROJECT_ID=your_project_id (optional)")
     print()
     
-    setup_email_credentials()
+    success = setup_email_credentials()
+    if not success:
+        print()
+        print("❌ Setup failed. Please check your .env file configuration.")
+        exit(1)
+    else:
+        print()
+        print("🎉 Email setup completed successfully!")
