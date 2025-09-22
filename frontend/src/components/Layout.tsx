@@ -17,7 +17,6 @@ import {
 } from '@mui/material';
 import {
   Menu as MenuIcon,
-  Dashboard as DashboardIcon,
   Description as RequirementsIcon,
   BugReport as TestIcon,
   Upload as UploadIcon,
@@ -38,7 +37,6 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
   const location = useLocation();
 
   const menuItems = [
-    { text: 'Dashboard', icon: <DashboardIcon />, path: '/' },
     { text: 'Document Upload', icon: <UploadIcon />, path: '/document-upload' },
     { text: 'Test Generation', icon: <TestIcon />, path: '/test-generation' },
     { text: 'Requirements', icon: <RequirementsIcon />, path: '/requirements' },

@@ -35,6 +35,42 @@ echo 'export ANTHROPIC_API_KEY="your_actual_api_key_here"' >> ~/.zshrc
 source ~/.zshrc
 ```
 
+## Email Configuration
+
+The system supports Gmail API for sending test cases and notifications. You need to set up Gmail API credentials:
+
+### 1. Gmail API Setup
+
+1. Go to [Google Cloud Console](https://console.cloud.google.com/)
+2. Create a new project or select existing one
+3. Enable Gmail API
+4. Create OAuth 2.0 credentials
+5. Download the credentials JSON file
+
+### 2. Set Gmail Environment Variables
+
+```bash
+export GOOGLE_CLIENT_ID="your_google_client_id_here"
+export GOOGLE_CLIENT_SECRET="your_google_client_secret_here"
+export BA_EMAIL="bhanagearshan@gmail.com"
+export ADMIN_EMAIL="arshan.bhanage@sjsu.edu"
+```
+
+### 3. Quick Setup Script
+
+Run the email setup script to configure Gmail API:
+
+```bash
+cd backend
+python setup_email.py
+```
+
+This will:
+- Create credentials.json with your OAuth credentials
+- Authenticate with Gmail API
+- Create token.json for future use
+- Configure email addresses
+
 ## Pinecone Vector Database Setup
 
 The system now uses Pinecone for persistent vector storage. You need to set up Pinecone credentials:

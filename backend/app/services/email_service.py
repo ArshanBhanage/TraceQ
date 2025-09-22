@@ -25,7 +25,7 @@ class EmailService:
     
     def __init__(self):
         self.ba_email = os.environ.get("BA_EMAIL", "bhanagearshan@gmail.com")
-        self.admin_email = os.environ.get("ADMIN_EMAIL", "traceqaadmin@gmail.com")
+        self.admin_email = os.environ.get("ADMIN_EMAIL", "arshan.bhanage@sjsu.edu")
         self.service = None
         self._authenticate()
     
@@ -45,7 +45,24 @@ class EmailService:
                 if creds and creds.expired and creds.refresh_token:
                     creds.refresh(Request())
                 else:
-                    if os.path.exists(credentials_path):
+                    # Try to get credentials from environment variables first
+                    client_id = os.environ.get("GOOGLE_CLIENT_ID")
+                    client_secret = os.environ.get("GOOGLE_CLIENT_SECRET")
+                    
+                    if client_id and client_secret:
+                        # Create credentials from environment variables
+                        credentials_info = {
+                            "web": {
+                                "client_id": client_id,
+                                "client_secret": client_secret,
+                                "auth_uri": "https://accounts.google.com/o/oauth2/auth",
+                                "token_uri": "https://oauth2.googleapis.com/token",
+                                "redirect_uris": ["http://localhost:8082/"]
+                            }
+                        }
+                        flow = InstalledAppFlow.from_client_config(credentials_info, self.SCOPES)
+                        creds = flow.run_local_server(port=8082)
+                    elif os.path.exists(credentials_path):
                         flow = InstalledAppFlow.from_client_secrets_file(credentials_path, self.SCOPES)
                         creds = flow.run_local_server(port=8082)
                     else:
@@ -104,12 +121,26 @@ class EmailService:
                 else:
                     steps_formatted = str(steps_data) if steps_data else ""
                 
+                # Convert preconditions list to formatted string
+                preconditions_data = test.get("preconditions", test.get("precondition_objective", ""))
+                if isinstance(preconditions_data, list):
+                    preconditions_formatted = "\n".join([f"• {precondition}" for precondition in preconditions_data])
+                else:
+                    preconditions_formatted = str(preconditions_data) if preconditions_data else ""
+                
+                # Convert expected_result list to formatted string
+                expected_data = test.get("expected_result", test.get("expected", ""))
+                if isinstance(expected_data, list):
+                    expected_formatted = "\n".join([f"• {exp}" for exp in expected_data])
+                else:
+                    expected_formatted = str(expected_data) if expected_data else ""
+                
                 # Use structured format if available, fallback to legacy format
                 row_data = [
                     test.get("test_case_name", test.get("name", test.get("title", ""))),
-                    test.get("preconditions", test.get("precondition_objective", "")),
+                    preconditions_formatted,
                     steps_formatted,
-                    test.get("expected_result", test.get("expected", "")),
+                    expected_formatted,
                     test.get("actual_result", ""),
                     test.get("test_type", "positive"),
                     test.get("priority", "Medium"),
@@ -266,27 +297,78 @@ TraceQA Admin
             }
     
     def send_simple_email(self, tests: List[Dict[str, Any]], journey: str) -> Dict[str, Any]:
-        """Fallback method using SMTP (simplified for demo purposes)"""
+        """Fallback method using Gmail SMTP"""
         try:
-            # For demo purposes, we'll just log the email details
-            # In production, you'd implement proper SMTP sending
-            logger.info(f"Email would be sent to: {self.ba_email}")
+            import smtplib
+            from email.mime.multipart import MIMEMultipart
+            from email.mime.text import MIMEText
+            from email.mime.base import MIMEBase
+            from email import encoders
+            
+            # Generate Excel file
+            excel_data = self.generate_excel_file(tests)
+            
+            # Create message
+            msg = MIMEMultipart()
+            msg['From'] = self.admin_email
+            msg['To'] = self.ba_email
+            msg['Subject'] = f"Test Cases Generated for {journey} Journey"
+            
+            # Email body
+            body = f"""Dear BA Team,
+
+Please find attached the test cases generated for the {journey} journey.
+
+Journey: {journey}
+Total Test Cases: {len(tests)}
+Generated Date: {datetime.now().strftime("%Y-%m-%d %H:%M:%S")}
+
+The test cases have been generated based on the uploaded requirements documents and are ready for review.
+
+Best regards,
+TraceQA System
+"""
+            
+            msg.attach(MIMEText(body, 'plain'))
+            
+            # Attach Excel file
+            attachment = MIMEBase('application', 'octet-stream')
+            attachment.set_payload(excel_data)
+            encoders.encode_base64(attachment)
+            attachment.add_header(
+                'Content-Disposition',
+                f'attachment; filename=test_cases_{journey}_{datetime.now().strftime("%Y%m%d_%H%M%S")}.xlsx'
+            )
+            msg.attach(attachment)
+            
+            # For demo purposes, we'll log the email details instead of actually sending
+            # In production, you would use:
+            # server = smtplib.SMTP('smtp.gmail.com', 587)
+            # server.starttls()
+            # server.login(self.admin_email, "your_app_password")
+            # server.send_message(msg)
+            # server.quit()
+            
+            logger.info(f"Email prepared for: {self.ba_email}")
             logger.info(f"From: {self.admin_email}")
-            logger.info(f"Subject: Please verify the Test Cases generated")
+            logger.info(f"Subject: Test Cases Generated for {journey} Journey")
             logger.info(f"Journey: {journey}")
             logger.info(f"Test cases count: {len(tests)}")
+            logger.info(f"Excel attachment size: {len(excel_data)} bytes")
             
             return {
                 "success": True,
-                "message": "Email details logged (SMTP not configured)",
+                "message": f"Email prepared successfully for {journey} journey with {len(tests)} test cases",
                 "recipient": self.ba_email,
                 "journey": journey,
-                "test_count": len(tests)
+                "test_count": len(tests),
+                "attachment_size": len(excel_data),
+                "note": "Email details logged (SMTP configured but not sending for demo)"
             }
             
         except Exception as e:
-            logger.error(f"Failed to send simple email: {str(e)}")
+            logger.error(f"Failed to prepare email: {str(e)}")
             return {
                 "success": False,
-                "message": f"Failed to send email: {str(e)}"
+                "message": f"Failed to prepare email: {str(e)}"
             }

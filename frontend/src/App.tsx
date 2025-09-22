@@ -3,7 +3,6 @@ import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
 import { ThemeProvider, createTheme } from '@mui/material/styles';
 import { CssBaseline } from '@mui/material';
 import Layout from './components/Layout';
-import Dashboard from './pages/Dashboard';
 import Requirements from './pages/Requirements';
 import TestGeneration from './pages/TestGeneration';
 import DocumentUpload from './pages/DocumentUpload';
@@ -72,7 +71,7 @@ function App() {
         <Router>
           <Layout>
             <Routes>
-              <Route path="/" element={<Dashboard />} />
+              <Route path="/" element={<DocumentUpload />} />
               <Route path="/requirements" element={<Requirements />} />
               <Route path="/test-generation" element={<TestGeneration />} />
               <Route path="/document-upload" element={<DocumentUpload />} />
